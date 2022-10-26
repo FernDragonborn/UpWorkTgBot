@@ -43,9 +43,9 @@ internal class Telegram
 
             var chatId = message.Chat.Id;
 
-            Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
+            Console.WriteLine($"{DateTime.Now}\tReceived a '{messageText}' message in chat {chatId}.");
 
-            if (messageText == "/start") { DB.CreatNewFreelancer(message.From.Username, chatId); }
+            if (messageText == "/start") { DB.CreatNewFreelancerAsync(message.From.Username, chatId); }
 
             // Echo received message text
             //Message sentMessage = await botClient.SendTextMessageAsync(

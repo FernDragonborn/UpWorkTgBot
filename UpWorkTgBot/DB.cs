@@ -1,5 +1,8 @@
-﻿using System.Net;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.Net;
 using System.Xml;
+using File = System.IO.File;
 
 namespace UpWorkTgBot;
 
@@ -26,29 +29,70 @@ internal class DB
     internal string url { get; set; }
     internal void downloadData()
     {
-        using (var client = new WebClient())
+        using var client = new WebClient();
+        client.DownloadFile(url, dataPath);
+        //source = client.DownloadString(url);
+    }
+
+    internal async Task AddRssUrl(long chatId)
+    {
+        string path = "freelancers.xml";
+
+        XmlTextReader reader = new XmlTextReader(path);
+
+        XmlDocument doc = new XmlDocument();
+        XmlNode node = doc.ReadNode(reader);
+
+        var freelancer = new Freelancer();
+        foreach (XmlNode chldNode in node.ChildNodes)
         {
-            client.DownloadFile(url, dataPath);
-            //source = client.DownloadString(url);
+            //Read the attribute Name
+            if (chldNode.Name == "freelancer" && chldNode.HasChildNodes)
+            {
+                foreach (XmlNode item in node.ChildNodes)
+                {
+                    var freelName = node.InnerText;
+                    if (freelName is null) break;
+                    // Process the value here
+                }
+
+            }
         }
+
+        var freelDoc = new XmlDocument();
+        freelDoc.Load(path);
+
+        var writer = new System.Xml.Serialization.XmlSerializer(typeof(Freelancer));
+
+        XmlElement? xRoot = freelDoc.DocumentElement;
+        //XmlNode freelancerNode = freelDoc.CreateNode(XmlNodeType.Element, name, "");
+        XmlNodeList xList = xRoot.GetElementsByTagName("freelancer");
+
+
+        var file = File.Open(path, FileMode.Open, FileAccess.ReadWrite);
+        writer.Serialize(file, freelancer);
+        file.Close();
     }
-    static internal void CreatNewFreelancer(string name, long chatId)
+
+    static internal async Task CreatNewFreelancerAsync(string name, long chatId)
     {
-        var freel = new Freelancer(name, chatId);
-        var freelancersXml = new XmlDocument();
-        if (!(File.Exists("freelancers.xml"))) CreateFreelancersXml();
-        freelancersXml.LoadXml("freelancers.xml");
-        XmlElement? xRoot = freelancersXml.DocumentElement;
-        XmlNode xNode = freelancersXml.CreateNode(XmlNodeType.Element, name, "");
-        freelancersXml.Save("freelancers.xml");
+        string path = "freelancers.json";
+        var freelancer = new Freelancer(name, chatId);
+
+        //var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        JsonSerializer serializer = new JsonSerializer();
+
+        serializer.NullValueHandling = NullValueHandling.Ignore;
+        serializer.Converters.Add(new JavaScriptDateTimeConverter());
+
+        using (StreamWriter sw = new StreamWriter(path))
+        using (JsonWriter writer = new JsonTextWriter(sw))
+        {
+            serializer.Serialize(writer, freelancer);
+        }
+        Console.WriteLine("[DB]: Created new freelancer");
     }
-    static private void CreateFreelancersXml()
-    {
-        File.Create("freelancers.xml");
-        var freelancersXml = new XmlDocument();
-        freelancersXml.CreateElement("freeelancers");
-        freelancersXml.Save("freelancers.xml");
-    }
+
     internal List<Post> getPosts()
     {
         XmlDocument xDoc = new XmlDocument();
@@ -74,6 +118,10 @@ internal class DB
                 PostList.Add(post);
         }
         return PostList;
+    }
+    static private void CreatefreelDoc()
+    {
+        File.Create("freelancers.json").Close();
     }
 }
 

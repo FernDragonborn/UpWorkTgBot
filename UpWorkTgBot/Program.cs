@@ -15,7 +15,7 @@ internal class Program
         if (!(File.Exists("data.xml"))) db.downloadData();
         var PostList = new List<Post>(db.getPosts());
 
-        var freelancer = new Freelancer(561838359);
+        var freelancer = new Freelancer("Fern", 561838359);
 
         var post = new Post()
         {
@@ -29,10 +29,13 @@ internal class Program
         sb.Append($"<b>Description: </b>\n{post.Description}\n");
         sb.Append($"<b>Publicated: </b>\n{post.PubDate}");
         sb.Replace("<br />", "\n");
-        await tg.SendMessageAsync(freelancer, sb.ToString());
-
+        //await tg.SendMessageAsync(freelancer, sb.ToString());
+        await DB.CreatNewFreelancerAsyncNew("Fern", 561838359);
 
         Console.ReadKey();
+
+
+
     }
 }
 
