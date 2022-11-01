@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using System.Net;
 using System.Xml;
 using File = System.IO.File;
@@ -39,37 +38,36 @@ internal class DB
     {
         string path = "freelancers.json";
         var tg = new Telegram();
-        bool isDone = false;
 
-        string source = File.ReadAllText(path);
-        var sr = new StreamReader(path);
-        var reader = new JsonTextReader(sr);
-        sr.Close();
-        var sw = new StreamWriter(path);
-        var writer = new JsonTextWriter(sw);
-        sw.Close();
-        JsonSerializer serializer = new JsonSerializer();
-        serializer.NullValueHandling = NullValueHandling.Ignore;
-        serializer.Converters.Add(new JavaScriptDateTimeConverter());
-
-        var freelList = JsonConvert.DeserializeObject<List<Freelancer>>(source);
-
-
-        foreach (Freelancer freel in freelList)
+        if (!(File.Exists(path)))
         {
-            if (freel.ChatId == chatId)
+            await tg.SendMessageAsync(chatId, "DB doesn't exist 😥\nUse \"/start\" or if triend connect @FernDragonborn");
+            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RssUrl: json file not exists");
+        }
+
+        RssUrl = RssUrl.TrimStart().Substring(11);
+
+        string content = File.ReadAllText(path);
+        List<Freelancer> freels = JsonConvert.DeserializeObject<List<Freelancer>>(content);
+        if (freels.Count != 0)
+        {
+            foreach (Freelancer freel in freels)
             {
-                freel.RssStrings.Add(RssUrl);
-                serializer.Serialize(writer, freel);
-                Console.WriteLine($"{DateTime.Now}\t[DB]: Added new RSS to {freel.Name}");
-                await tg.SendMessageAsync(chatId, "Added RSS succesfully");
-                isDone = true;
+                if (freel.ChatId == chatId)
+                {
+                    freel.RssStrings.Add(RssUrl);
+                    string json = JsonConvert.SerializeObject(freels);
+                    File.WriteAllText(path, json);
+                    Console.WriteLine($"{DateTime.Now}\t[DB]: Added new RSS to {freel.Name}");
+                    await tg.SendMessageAsync(chatId, "Added RSS succesfully 😎");
+                    return;
+                }
             }
         }
-        if (isDone == false)
+        else
         {
-            Console.WriteLine($"{DateTime.Now}  [DB]: Failed to add RSS");
-            await tg.SendMessageAsync(chatId, "Your RSS haven't been added, connect with Fern");
+            await tg.SendMessageAsync(chatId, "DB doesn't exist 😥\nUse \"/start\" or if triend connect @FernDragonborn");
+            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RssUrl: freelansers count in list is 0");
         }
     }
 
