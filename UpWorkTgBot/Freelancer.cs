@@ -8,7 +8,7 @@
             Id = Guid.NewGuid();
             Name = name;
             ChatId = chatId;
-
+            RssStrings = new List<string>();
         }
         public Guid Id { get; set; }
         public string Name { get; set; }

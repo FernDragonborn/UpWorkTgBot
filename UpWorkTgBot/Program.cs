@@ -30,12 +30,9 @@ internal class Program
         sb.Append($"<b>Publicated: </b>\n{post.PubDate}");
         sb.Replace("<br />", "\n");
         //await tg.SendMessageAsync(freelancer, sb.ToString());
-        await DB.CreatNewFreelancerAsyncNew("Fern", 561838359);
+
 
         Console.ReadKey();
-
-
-
     }
 }
 

@@ -34,44 +34,41 @@ internal class DB
         //source = client.DownloadString(url);
     }
 
-    internal async Task AddRssUrl(long chatId)
+    static internal async Task AddRssUrl(string RssUrl, long chatId)
     {
-        string path = "freelancers.xml";
+        var tg = new Telegram();
+        string path = "freelancers.json";
+        bool isDone = false;
 
-        XmlTextReader reader = new XmlTextReader(path);
+        string source = File.ReadAllText(path);
+        var sr = new StreamReader(path);
+        var reader = new JsonTextReader(sr);
+        sr.Close();
+        var sw = new StreamWriter(path);
+        var writer = new JsonTextWriter(sw);
+        sw.Close();
+        JsonSerializer serializer = new JsonSerializer();
+        serializer.NullValueHandling = NullValueHandling.Ignore;
+        serializer.Converters.Add(new JavaScriptDateTimeConverter());
 
-        XmlDocument doc = new XmlDocument();
-        XmlNode node = doc.ReadNode(reader);
-
-        var freelancer = new Freelancer();
-        foreach (XmlNode chldNode in node.ChildNodes)
+        var freelList = JsonConvert.DeserializeObject<List<Freelancer>>(source);
+        foreach (Freelancer freel in freelList)
         {
-            //Read the attribute Name
-            if (chldNode.Name == "freelancer" && chldNode.HasChildNodes)
+            if (freel.ChatId == chatId)
             {
-                foreach (XmlNode item in node.ChildNodes)
-                {
-                    var freelName = node.InnerText;
-                    if (freelName is null) break;
-                    // Process the value here
-                }
-
+                freel.RssStrings.Add(RssUrl);
+                serializer.Serialize(writer, freel);
+                Console.WriteLine($"{DateTime.Now}\t[DB]: Added new RSS to {freel.Name}");
+                tg.SendMessageAsync(chatId, "Added RSS succesfully");
+                isDone = true;
             }
         }
+        if (isDone == false)
+        {
+            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RSS");
+            tg.SendMessageAsync(chatId, "Your RSS haven't been added, connect with Fern");
+        }
 
-        var freelDoc = new XmlDocument();
-        freelDoc.Load(path);
-
-        var writer = new System.Xml.Serialization.XmlSerializer(typeof(Freelancer));
-
-        XmlElement? xRoot = freelDoc.DocumentElement;
-        //XmlNode freelancerNode = freelDoc.CreateNode(XmlNodeType.Element, name, "");
-        XmlNodeList xList = xRoot.GetElementsByTagName("freelancer");
-
-
-        var file = File.Open(path, FileMode.Open, FileAccess.ReadWrite);
-        writer.Serialize(file, freelancer);
-        file.Close();
     }
 
     static internal async Task CreatNewFreelancerAsync(string name, long chatId)
@@ -79,7 +76,6 @@ internal class DB
         string path = "freelancers.json";
         var freelancer = new Freelancer(name, chatId);
 
-        //var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
         JsonSerializer serializer = new JsonSerializer();
 
         serializer.NullValueHandling = NullValueHandling.Ignore;
@@ -90,7 +86,7 @@ internal class DB
         {
             serializer.Serialize(writer, freelancer);
         }
-        Console.WriteLine("[DB]: Created new freelancer");
+        Console.WriteLine($"{DateTime.Now}\t[DB]: Created new freelancer");
     }
 
     internal List<Post> getPosts()

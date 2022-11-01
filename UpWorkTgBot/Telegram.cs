@@ -43,9 +43,14 @@ internal class Telegram
 
             var chatId = message.Chat.Id;
 
-            Console.WriteLine($"{DateTime.Now}\tReceived a '{messageText}' message in chat {chatId}.");
+            Console.WriteLine($"{DateTime.Now}  [TG]: Received a '{messageText}' message in chat {chatId}.");
 
             if (messageText == "/start") { DB.CreatNewFreelancerAsync(message.From.Username, chatId); }
+            if (messageText.StartsWith("/addRssUrl")) { DB.AddRssUrl(messageText, chatId); }
+            if (messageText.StartsWith("/a"))
+            {
+                DB.AddRssUrl("/addRssUrl https://www.upwork.com/ab/feed/jobs/rss?api_params=1&amp;budget=100-499%2C500-999%2C1000-4999%2C5000-&amp;job_type=hourly%2Cfixed&amp;ontology_skill_uid=1031626756493656064&amp;orgUid=1526554921826770945&amp;paging=0%3B10&amp;proposals=0-4%2C5-9&amp;q=&amp;securityToken=be3fbd85f54c1b3c626d21e8815a06b4fd21b61c4dc2f2664ce0109112f6c4a9f3e3504d635eba812bb1d38e21af9fe2661570c91ad8e396abdd056cfbc91559&amp;sort=recency&amp;userUid=1526554921826770944&amp;verified_payment_only=1&amp;workload=as_needed%2Cpart_time", 561838359);
+            }
 
             // Echo received message text
             //Message sentMessage = await botClient.SendTextMessageAsync(
@@ -76,6 +81,14 @@ internal class Telegram
     {
         Message sentMessage = await botClient.SendTextMessageAsync(
             chatId: freelancer.ChatId,
+            text: messageText,
+            parseMode: ParseMode.Html,
+            cancellationToken: cancellationToken);
+    }
+    public async Task SendMessageAsync(long chatId, string messageText)
+    {
+        Message sentMessage = await botClient.SendTextMessageAsync(
+            chatId: chatId,
             text: messageText,
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
