@@ -33,7 +33,15 @@ internal class DB
         //source = client.DownloadString(url);
     }
 
-    //WIP
+    static internal List<Freelancer> GetFreelancers()
+    {
+        string path = "freelancers.json";
+
+        string content = File.ReadAllText(path);
+        List<Freelancer> freels = JsonConvert.DeserializeObject<List<Freelancer>>(content);
+        return freels;
+    }
+
     static internal async Task AddRssUrlAsync(string RssUrl, long chatId)
     {
         string path = "freelancers.json";

@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using System.Text;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -45,7 +46,7 @@ internal class Telegram
 
             Console.WriteLine($"{DateTime.Now}  [TG]: Received a '{messageText}' message in chat {chatId}.");
 
-            if (messageText == "/start") { await DB.CreatNewFreelancerAsync(message.From.Username, chatId); }
+            if (messageText == "/start") { await DB.CreatNewFreelancerAsync(message.From.Username, chatId); SendMessageAsync(chatId, "Hello, приветсвенного сообщения пока нет"); }
             if (messageText.StartsWith("/addRssUrl")) { DB.AddRssUrlAsync(messageText, chatId); }
             if (messageText.StartsWith("/test"))
             {
@@ -93,6 +94,15 @@ internal class Telegram
             text: messageText,
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
+    }
+    public async Task SendPostAsync(Freelancer freel, Post post)
+    {
+        var sb = new StringBuilder();
+        sb.Append($"<b>Title: </b>\n{post.Title}\n");
+        sb.Append($"<b>Description: </b>\n{post.Description}\n");
+        sb.Append($"<b>Publicated: </b>\n{post.PubDate}");
+        sb.Replace("<br />", "\n");
+        await SendMessageAsync(freel, sb.ToString());
     }
 }
 
