@@ -45,11 +45,12 @@ internal class Telegram
 
             Console.WriteLine($"{DateTime.Now}  [TG]: Received a '{messageText}' message in chat {chatId}.");
 
-            if (messageText == "/start") { DB.CreatNewFreelancerAsync(message.From.Username, chatId); }
-            if (messageText.StartsWith("/addRssUrl")) { DB.AddRssUrl(messageText, chatId); }
-            if (messageText.StartsWith("/a"))
+            if (messageText == "/start") { await DB.CreatNewFreelancerAsync(message.From.Username, chatId); }
+            if (messageText.StartsWith("/addRssUrl")) { DB.AddRssUrlAsync(messageText, chatId); }
+            if (messageText.StartsWith("/test"))
             {
-                DB.AddRssUrl("/addRssUrl https://www.upwork.com/ab/feed/jobs/rss?api_params=1&amp;budget=100-499%2C500-999%2C1000-4999%2C5000-&amp;job_type=hourly%2Cfixed&amp;ontology_skill_uid=1031626756493656064&amp;orgUid=1526554921826770945&amp;paging=0%3B10&amp;proposals=0-4%2C5-9&amp;q=&amp;securityToken=be3fbd85f54c1b3c626d21e8815a06b4fd21b61c4dc2f2664ce0109112f6c4a9f3e3504d635eba812bb1d38e21af9fe2661570c91ad8e396abdd056cfbc91559&amp;sort=recency&amp;userUid=1526554921826770944&amp;verified_payment_only=1&amp;workload=as_needed%2Cpart_time", 561838359);
+                Console.WriteLine("try to test addRss");
+                DB.AddRssUrlAsync("/addRssUrl https://www.upwork.com/ab/feed/jobs/rss?api_params=1&amp;budget=100-499%2C500-999%2C1000-4999%2C5000-&amp;job_type=hourly%2Cfixed&amp;ontology_skill_uid=1031626756493656064&amp;orgUid=1526554921826770945&amp;paging=0%3B10&amp;proposals=0-4%2C5-9&amp;q=&amp;securityToken=be3fbd85f54c1b3c626d21e8815a06b4fd21b61c4dc2f2664ce0109112f6c4a9f3e3504d635eba812bb1d38e21af9fe2661570c91ad8e396abdd056cfbc91559&amp;sort=recency&amp;userUid=1526554921826770944&amp;verified_payment_only=1&amp;workload=as_needed%2Cpart_time", 561838359);
             }
 
             // Echo received message text

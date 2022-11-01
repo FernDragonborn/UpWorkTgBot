@@ -21,7 +21,7 @@ internal class Post
 }
 internal class DB
 {
-    string dataPath = "data.xml";
+    readonly string dataPath = "data.xml";
     public DB(string url)
     {
         this.url = url;
@@ -34,10 +34,11 @@ internal class DB
         //source = client.DownloadString(url);
     }
 
-    static internal async Task AddRssUrl(string RssUrl, long chatId)
+    //WIP
+    static internal async Task AddRssUrlAsync(string RssUrl, long chatId)
     {
-        var tg = new Telegram();
         string path = "freelancers.json";
+        var tg = new Telegram();
         bool isDone = false;
 
         string source = File.ReadAllText(path);
@@ -52,6 +53,8 @@ internal class DB
         serializer.Converters.Add(new JavaScriptDateTimeConverter());
 
         var freelList = JsonConvert.DeserializeObject<List<Freelancer>>(source);
+
+
         foreach (Freelancer freel in freelList)
         {
             if (freel.ChatId == chatId)
@@ -59,34 +62,51 @@ internal class DB
                 freel.RssStrings.Add(RssUrl);
                 serializer.Serialize(writer, freel);
                 Console.WriteLine($"{DateTime.Now}\t[DB]: Added new RSS to {freel.Name}");
-                tg.SendMessageAsync(chatId, "Added RSS succesfully");
+                await tg.SendMessageAsync(chatId, "Added RSS succesfully");
                 isDone = true;
             }
         }
         if (isDone == false)
         {
-            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RSS");
-            tg.SendMessageAsync(chatId, "Your RSS haven't been added, connect with Fern");
+            Console.WriteLine($"{DateTime.Now}  [DB]: Failed to add RSS");
+            await tg.SendMessageAsync(chatId, "Your RSS haven't been added, connect with Fern");
         }
-
     }
 
     static internal async Task CreatNewFreelancerAsync(string name, long chatId)
     {
         string path = "freelancers.json";
         var freelancer = new Freelancer(name, chatId);
+        var tg = new Telegram();
 
-        JsonSerializer serializer = new JsonSerializer();
-
-        serializer.NullValueHandling = NullValueHandling.Ignore;
-        serializer.Converters.Add(new JavaScriptDateTimeConverter());
-
-        using (StreamWriter sw = new StreamWriter(path))
-        using (JsonWriter writer = new JsonTextWriter(sw))
+        if (!(File.Exists(path)))
         {
-            serializer.Serialize(writer, freelancer);
+            File.Create(path).Close();
+            var freels2 = new List<Freelancer> { freelancer };
+            string json2 = JsonConvert.SerializeObject(freels2);
+            File.WriteAllText(path, json2);
+            return;
         }
-        Console.WriteLine($"{DateTime.Now}\t[DB]: Created new freelancer");
+
+        string content = File.ReadAllText(path);
+        List<Freelancer> freels = JsonConvert.DeserializeObject<List<Freelancer>>(content);
+        if (freels.Count != 0)
+        {
+            foreach (Freelancer freel in freels)
+            {
+                if (freel.Name == name)
+                {
+                    await tg.SendMessageAsync(chatId, "Your profile already exists 😊");
+                    return;
+                }
+            }
+        }
+
+        freels.Add(freelancer);
+        string json = JsonConvert.SerializeObject(freels);
+        File.WriteAllText(path, json);
+        await tg.SendMessageAsync(chatId, "Succesfully created your profile 😊");
+        Console.WriteLine($"{DateTime.Now}  [DB]: Created new freelancer");
     }
 
     internal List<Post> getPosts()
@@ -114,10 +134,6 @@ internal class DB
                 PostList.Add(post);
         }
         return PostList;
-    }
-    static private void CreatefreelDoc()
-    {
-        File.Create("freelancers.json").Close();
     }
 }
 
