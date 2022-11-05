@@ -12,10 +12,12 @@ internal class Program
         }
         List<Freelancer> freelList = DB.GetFreelancers();
         int iterations = 0;
-        var a = new List<string>();
+        var shownPosts = new List<string>();
         while (true)
         {
-            Thread.Sleep(10 * 60 * 1000); //first number is for minutes between new posts
+            //Thread.Sleep(10 * 60 * 1000); //first number is for minutes between new posts
+
+            Thread.Sleep(2 * 1000); //first number is for minutes between new posts
 
             foreach (Freelancer freel in freelList)
             {
@@ -27,17 +29,19 @@ internal class Program
                     var Postlist = new List<Post>(db.getPosts());
                     foreach (Post post in Postlist)
                     {
-                        if (a.Contains(post.Title)) continue;
+                        if (shownPosts.Contains(post.Title)) continue;
                         tg.SendPostAsync(freel, post);
-                        a.Add(post.Title);
+                        shownPosts.Add(post.Title);
                     }
                 }
+                await DB.SaveShownPosts(shownPosts, freel.ChatId);
                 Console.WriteLine($"posts sended to {freel.Name}");
             }
-            if (iterations >= 100)
+            if (iterations >= 72) //clears twice per day if iteration takes 10 min
             {
                 iterations = 0;
-                a.Clear();
+                shownPosts.Reverse();
+                shownPosts.RemoveRange(30, shownPosts.Count - 30);
             }
 
             iterations++;

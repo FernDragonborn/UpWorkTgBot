@@ -14,5 +14,6 @@
         public string Name { get; set; }
         public long ChatId { get; set; }
         public List<string> RssStrings { get; set; }
+        public List<string> ShownPosts { get; set; }
     }
 }

@@ -33,6 +33,40 @@ internal class DB
         //source = client.DownloadString(url);
     }
 
+    static internal async Task SaveShownPosts(List<string> shownPosts, long chatId)
+    {
+        string path = "freelancers.json";
+        var tg = new Telegram();
+
+        if (!(File.Exists(path)))
+        {
+            await tg.SendMessageAsync(chatId, "Internal error 😥\nconnect @FernDragonborn");
+            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to rewrite posts: json file not exists");
+        }
+
+        string content = File.ReadAllText(path);
+        List<Freelancer> freels = JsonConvert.DeserializeObject<List<Freelancer>>(content);
+        if (freels.Count != 0)
+        {
+            foreach (Freelancer freel in freels)
+            {
+                if (freel.ChatId == chatId)
+                {
+                    freel.ShownPosts = shownPosts;
+                    string json = JsonConvert.SerializeObject(freels);
+                    File.WriteAllText(path, json);
+                    Console.WriteLine($"{DateTime.Now}\t[DB]: Rewrited shown posts for {freel.Name}");
+                    return;
+                }
+            }
+        }
+        else
+        {
+            await tg.SendMessageAsync(chatId, "DB doesn't exist 😥\nUse \"/start\" or if triend connect @FernDragonborn");
+            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RssUrl: freelansers count in list is 0");
+        }
+    }
+
     static internal List<Freelancer> GetFreelancers()
     {
         string path = "freelancers.json";

@@ -46,8 +46,9 @@ internal class Telegram
 
             Console.WriteLine($"{DateTime.Now}  [TG]: Received a '{messageText}' message in chat {chatId}.");
 
-            if (messageText == "/start") { await DB.CreatNewFreelancerAsync(message.From.Username, chatId); SendMessageAsync(chatId, "Hello, приветсвенного сообщения пока нет"); }
-            if (messageText.StartsWith("/addRssUrl")) { DB.AddRssUrlAsync(messageText, chatId); }
+            if (messageText == "/start") { await DB.CreatNewFreelancerAsync(message.From.Username, chatId); SendMessageAsync(chatId, "Hello, this bot can receive posts from UpWork directly to this chat in Telegram. Add your RSS link and get updates as soon as it possible!"); }
+            if (messageText == "/help") { SendMessageAsync(chatId, ""); }
+            if (messageText.StartsWith("/addRssUrl")) { await DB.AddRssUrlAsync(messageText, chatId); }
             if (messageText.StartsWith("/test"))
             {
                 Console.WriteLine("try to test addRss");
@@ -102,7 +103,7 @@ internal class Telegram
         sb.Append($"<b>Description: </b>\n{post.Description}\n");
         sb.Append($"<b>Publicated: </b>\n{post.PubDate}");
         sb.Replace("<br />", "\n");
-        await SendMessageAsync(freel, sb.ToString());
+        SendMessageAsync(freel, sb.ToString());
     }
 }
 
