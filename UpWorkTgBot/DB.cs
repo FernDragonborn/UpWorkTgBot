@@ -154,7 +154,7 @@ internal class DB
         XmlDocument xDoc = new XmlDocument();
         xDoc.Load(dataPath);
         XmlElement? xChannel = xDoc.DocumentElement;
-        XmlElement? xRoot = (XmlElement?)xChannel.FirstChild;
+        XmlElement? xRoot = xChannel?.FirstChild as XmlElement;
         var PostList = new List<Post>();
         if (xRoot is null) throw new NullReferenceException();
         foreach (XmlElement xnode in xRoot)
