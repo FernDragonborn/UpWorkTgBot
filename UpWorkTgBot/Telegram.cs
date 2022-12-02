@@ -10,6 +10,7 @@ namespace UpWorkTgBot;
 
 internal class Telegram
 {
+    private static readonly log4net.ILog log = LogHelper.GetLogger();
     private static readonly string token = DotNetEnv.Env.GetString("TG_TOKEN");
     private static readonly string ADMIN_TOKEN = DotNetEnv.Env.GetString("ADMIN_TOKEN");
 
@@ -35,7 +36,7 @@ internal class Telegram
 
         var me = await botClient.GetMeAsync();
 
-        Console.WriteLine($"Start listening for @{me.Username}");
+        log.Fatal($"Start listening for @{me.Username}");
 
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -48,13 +49,13 @@ internal class Telegram
 
             var chatId = message.Chat.Id;
 
-            Console.WriteLine($"{DateTime.Now}  [TG]: Received a '{messageText}' message in chat {chatId}.");
+            log.Info($"[TG]: Received a '{messageText}' message in chat {chatId}.");
 
             //user commands
             if (messageText == "/start") { await DB.CreatNewFreelancerAsync(message.From.Username, chatId); await SendMessageAsync(chatId, "Hello, this bot can receive posts from UpWork directly to this chat in Telegram. Add your RSS link and get updates as soon as it possible!\n\nBot created by @FernDragonborn, connect him if help nedded and thanks for usage 🥰"); }
             else if (messageText == "/help") { await SendMessageAsync(chatId, "I can help you get new posts from UpWork immdeately!\n\nAvailable commnds:\n/start - start the bot and creates your profile\n/addRssUrl [url] - addes a new RSS location to receive posts. You can ahve as much as you want of them"); }
             else if (messageText.StartsWith("/addRssUrl")) { await DB.AddRssUrlAsync(messageText, chatId); }
-
+            //else if (messageText == "/RssList") { await DB.}
             //admin commands
             if (chatId.ToString() == ADMIN_TOKEN)
             {
@@ -65,6 +66,7 @@ internal class Telegram
                         chatId: chatId,
                         document: new InputOnlineFile(content: stream, fileName: $"{DateTime.Now} freelancers backup.json"),
                         caption: $"#BackUp");
+                    log.Info("sended database to admin");
                 }
                 else if (messageText == "/sendEnv")
                 {
@@ -73,10 +75,11 @@ internal class Telegram
                         chatId: chatId,
                         document: new InputOnlineFile(content: stream, fileName: $".env")
                         );
+                    log.Info("sended .env to admin");
                 }
                 else if (messageText == "/testAddRss")
                 {
-                    Console.WriteLine("try to test addRss");
+                    log.Info("try to test addRss");
                     await DB.AddRssUrlAsync("/addRssUrl https://www.upwork.com/ab/feed/jobs/rss?api_params=1&amp;budget=100-499%2C500-999%2C1000-4999%2C5000-&amp;job_type=hourly%2Cfixed&amp;ontology_skill_uid=1031626756493656064&amp;orgUid=1526554921826770945&amp;paging=0%3B10&amp;proposals=0-4%2C5-9&amp;q=&amp;securityToken=be3fbd85f54c1b3c626d21e8815a06b4fd21b61c4dc2f2664ce0109112f6c4a9f3e3504d635eba812bb1d38e21af9fe2661570c91ad8e396abdd056cfbc91559&amp;sort=recency&amp;userUid=1526554921826770944&amp;verified_payment_only=1&amp;workload=as_needed%2Cpart_time", 561838359);
                 }
 
@@ -98,7 +101,7 @@ internal class Telegram
                 _ => exception.ToString()
             };
 
-            Console.WriteLine(ErrorMessage);
+            log.Error(ErrorMessage);
             return Task.CompletedTask;
         }
     }
@@ -127,7 +130,8 @@ internal class Telegram
         sb.Replace("<br />", "\n");
         sb.Replace("\n\n", "\n");
         await SendMessageAsync(freel, sb.ToString());
-        Console.WriteLine($"post {post.PubDate.Replace("+0000", "")} sended to {freel.Name}");
+
+        log.Info($"post {post.PubDate.Replace("+0000", "")} sended to {freel.Name}");
     }
 }
 

@@ -1,9 +1,16 @@
-﻿namespace UpWorkTgBot;
+﻿[assembly: log4net.Config.XmlConfigurator]
+
+namespace UpWorkTgBot;
 //TODO add logging ang logging sending to Fern in Tg
 internal class Program
 {
+    private static readonly log4net.ILog log = LogHelper.GetLogger();
+    //private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+    //private static readonly ILog log = LogManager.GetLogger(typeof(Program));
+
     static async Task Main()
     {
+        log.Info("logger initialized");
         DotNetEnv.Env.Load();
         //DotNetEnv.Env.TraversePath().Load();
         var tg = new Telegram();
@@ -15,6 +22,7 @@ internal class Program
         List<Freelancer> freelList = DB.GetFreelancers();
         int iterations = 0;
         var shownPosts = new List<string>();
+
         while (true)
         {
 
@@ -23,9 +31,9 @@ internal class Program
                 bool postBeenSended = false;
                 shownPosts = freel.ShownPosts;
                 if (freel.RssStrings is null) break;
-                foreach (string rssUrl in freel.RssStrings)
+                foreach (string[] rssUrl in freel.RssStrings)
                 {
-                    var db = new DB(rssUrl);
+                    var db = new DB(rssUrl[1]);
                     //if (!(File.Exists("data.xml")))
                     db.downloadData();
                     var Postlist = new List<Post>(db.getPosts());

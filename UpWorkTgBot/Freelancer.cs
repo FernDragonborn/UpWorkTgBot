@@ -8,13 +8,13 @@
             Id = Guid.NewGuid();
             Name = name;
             ChatId = chatId;
-            RssStrings = new List<string>();
+            RssStrings = new List<string[]>();
             ShownPosts = new List<string>();
         }
         public Guid Id { get; set; }
         public string Name { get; set; }
         public long ChatId { get; set; }
-        public List<string>? RssStrings { get; set; }
+        public List<string[]>? RssStrings { get; set; }
         public List<string>? ShownPosts { get; set; }
     }
 }

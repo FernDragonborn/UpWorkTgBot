@@ -20,6 +20,8 @@ internal class Post
 }
 internal class DB
 {
+    private static readonly log4net.ILog log = LogHelper.GetLogger();
+
     readonly string dataPath = "data.xml";
     public DB(string url)
     {
@@ -76,7 +78,8 @@ internal class DB
         return freels;
     }
 
-    static internal async Task AddRssUrlAsync(string RssUrl, long chatId)
+    //TODO add checks for input correctness
+    static internal async Task AddRssUrlAsync(string messageText, long chatId)
     {
         string path = "freelancers.json";
         var tg = new Telegram();
@@ -84,10 +87,14 @@ internal class DB
         if (!(File.Exists(path)))
         {
             await tg.SendMessageAsync(chatId, "DB doesn't exist 😥\nUse \"/start\" or if triend connect @FernDragonborn");
-            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RssUrl: json file not exists");
+            log.Fatal("[DB]: Failed to add RssUrl: json file not exists");
         }
 
-        RssUrl = RssUrl.TrimStart().Substring(11);
+        //TODO check if works normally (especially RssUrl)
+        string RssName = messageText.TrimStart().Substring(11);
+        int SpaceIndex = RssName.IndexOf(" ");
+        RssName = RssName.Remove(SpaceIndex, RssName.Length - SpaceIndex);
+        string RssUrl = messageText.TrimStart().Substring(11 + RssName.Length);
 
         string content = File.ReadAllText(path);
         List<Freelancer> freels = JsonConvert.DeserializeObject<List<Freelancer>>(content);
@@ -97,10 +104,11 @@ internal class DB
             {
                 if (freel.ChatId == chatId)
                 {
-                    freel.RssStrings.Add(RssUrl);
+                    var Rss = new string[2] { RssName, RssUrl };
+                    freel.RssStrings.Add(Rss);
                     string json = JsonConvert.SerializeObject(freels);
                     File.WriteAllText(path, json);
-                    Console.WriteLine($"{DateTime.Now}\t[DB]: Added new RSS to {freel.Name}");
+                    log.Info($"[DB]: Added new RSS to {freel.Name}");
                     await tg.SendMessageAsync(chatId, "Added RSS succesfully 😎");
                     return;
                 }
@@ -109,7 +117,7 @@ internal class DB
         else
         {
             await tg.SendMessageAsync(chatId, "DB doesn't exist 😥\nUse \"/start\" or if triend connect @FernDragonborn");
-            Console.WriteLine($"{DateTime.Now}\t[DB]: Failed to add RssUrl: freelansers count in list is 0");
+            log.Error("[DB]: Failed to add RssUrl: freelansers count in list is 0");
         }
     }
 
@@ -137,6 +145,7 @@ internal class DB
                 if (freel.Name == name)
                 {
                     await tg.SendMessageAsync(chatId, "Your profile already exists 😊");
+                    log.Info($"{name} tried to add profile secondary");
                     return;
                 }
             }
@@ -146,7 +155,7 @@ internal class DB
         string json = JsonConvert.SerializeObject(freels);
         File.WriteAllText(path, json);
         await tg.SendMessageAsync(chatId, "Succesfully created your profile 😊");
-        Console.WriteLine($"{DateTime.Now}  [DB]: Created new freelancer");
+        log.Info("[DB]: Created new freelancer");
     }
 
     internal List<Post> getPosts()
