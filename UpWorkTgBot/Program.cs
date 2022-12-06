@@ -1,28 +1,33 @@
-﻿[assembly: log4net.Config.XmlConfigurator]
+﻿using log4net;
+
+[assembly: log4net.Config.XmlConfigurator]
 
 namespace UpWorkTgBot;
-//TODO add logging ang logging sending to Fern in Tg
+
 internal class Program
 {
-    private static readonly log4net.ILog log = LogHelper.GetLogger();
-    //private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-    //private static readonly ILog log = LogManager.GetLogger(typeof(Program));
+    static readonly ILog log = LogManager.GetLogger(typeof(Program));
 
     static async Task Main()
     {
+        Console.WriteLine("started. If no messages after, logger haven't initialized");
         log.Info("logger initialized");
-        DotNetEnv.Env.Load();
-        //DotNetEnv.Env.TraversePath().Load();
-        var tg = new Telegram();
-        tg.init();
-        if (!(File.Exists("freelancers.json")))
+
+        DotNetEnv.Env.Load(".env");
+
+        string PART_FREEL_PATH = DotNetEnv.Env.GetString("FREEL_PATH");
+        string FREEL_PATH = $"{Directory.GetCurrentDirectory()}{PART_FREEL_PATH}";
+        if (!(File.Exists(FREEL_PATH)))
         {
             await DB.CreatNewFreelancerAsync("test", 0);
         }
         List<Freelancer> freelList = DB.GetFreelancers();
-        int iterations = 0;
         var shownPosts = new List<string>();
 
+        var tg = new Telegram();
+        await tg.init();
+
+        int iterations = 0;
         while (true)
         {
 
@@ -47,7 +52,7 @@ internal class Program
                         postBeenSended = true;
                     }
                 }
-                if (postBeenSended) await DB.SaveShownPosts(shownPosts, freel.ChatId);
+                if (postBeenSended && shownPosts is not null) await DB.SaveShownPosts(shownPosts, freel.ChatId);
 
             }
             if (iterations >= 72) //clears twice per day if iteration takes 10 min
@@ -60,8 +65,8 @@ internal class Program
             iterations++;
 
             //TODO rewrite for real 10 minute iterations (now it's more than 10 min)
-            Thread.Sleep(10 * 60 * 1000); //first number is for minutes between new posts
-            //Thread.Sleep(60 * 1000); 
+            int MINUTES = Convert.ToInt32(DotNetEnv.Env.GetString("TIME_SPAN"));
+            Thread.Sleep(MINUTES * 60 * 1000); //first number is for minutes between new posts
         }
     }
 }

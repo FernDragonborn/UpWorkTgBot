@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using log4net;
+using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -10,11 +11,15 @@ namespace UpWorkTgBot;
 
 internal class Telegram
 {
-    private static readonly log4net.ILog log = LogHelper.GetLogger();
-    private static readonly string token = DotNetEnv.Env.GetString("TG_TOKEN");
-    private static readonly string ADMIN_TOKEN = DotNetEnv.Env.GetString("ADMIN_TOKEN");
+    static readonly ILog log = LogManager.GetLogger(typeof(Program));
 
-    private readonly TelegramBotClient botClient = new TelegramBotClient(token);
+    private static readonly string TOKEN = DotNetEnv.Env.GetString("TG_TOKEN");
+    private static readonly string ADMIN_TOKEN = DotNetEnv.Env.GetString("ADMIN_TOKEN");
+    private static readonly string PART_FREEL_PATH = DotNetEnv.Env.GetString("FREEL_PATH");
+    private static readonly string FREEL_PATH = $"{Directory.GetCurrentDirectory()}{PART_FREEL_PATH}";
+
+
+    private readonly TelegramBotClient botClient = new TelegramBotClient(TOKEN);
     public Func<ITelegramBotClient, Update, CancellationToken, Task> HandleUpdateAsync { get; private set; }
     public Func<ITelegramBotClient, Exception, CancellationToken, Task> HandlePollingErrorAsync { get; private set; }
     CancellationTokenSource cts = new CancellationTokenSource();
@@ -36,7 +41,8 @@ internal class Telegram
 
         var me = await botClient.GetMeAsync();
 
-        log.Fatal($"Start listening for @{me.Username}");
+        log.Info($"Start listening for @{me.Username}");
+        await SendMessageAsync(Convert.ToInt64(ADMIN_TOKEN), $"bot initialized\n{DateTime.Now}");
 
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -47,7 +53,7 @@ internal class Telegram
             if (message.Text is not { } messageText)
                 return;
 
-            var chatId = message.Chat.Id;
+            long chatId = message.Chat.Id;
 
             log.Info($"[TG]: Received a '{messageText}' message in chat {chatId}.");
 
@@ -61,7 +67,7 @@ internal class Telegram
             {
                 if (messageText == "/sendDB")
                 {
-                    await using Stream stream = System.IO.File.OpenRead(@"freelancers.json");
+                    await using Stream stream = System.IO.File.OpenRead(FREEL_PATH);
                     Message sendFile = await botClient.SendDocumentAsync(
                         chatId: chatId,
                         document: new InputOnlineFile(content: stream, fileName: $"{DateTime.Now} freelancers backup.json"),
@@ -131,7 +137,7 @@ internal class Telegram
         sb.Replace("\n\n", "\n");
         await SendMessageAsync(freel, sb.ToString());
 
-        log.Info($"post {post.PubDate.Replace("+0000", "")} sended to {freel.Name}");
+        log.Debug($"post {post.PubDate.Replace("+0000", "")} sended to {freel.Name}");
     }
 }
 
