@@ -19,17 +19,17 @@ internal class Telegram
     private static readonly string FREEL_PATH = $"{Directory.GetCurrentDirectory()}{PART_FREEL_PATH}";
 
 
-    private readonly TelegramBotClient botClient = new TelegramBotClient(TOKEN);
-    public Func<ITelegramBotClient, Update, CancellationToken, Task> HandleUpdateAsync { get; private set; }
+    private readonly TelegramBotClient botClient = new(TOKEN);
     public Func<ITelegramBotClient, Exception, CancellationToken, Task> HandlePollingErrorAsync { get; private set; }
-    CancellationTokenSource cts = new CancellationTokenSource();
-    ReceiverOptions receiverOptions = new ReceiverOptions
+    public Func<ITelegramBotClient, Update, CancellationToken, Task> HandleUpdateAsync { get; private set; }
+    readonly ReceiverOptions receiverOptions = new()
     {
         AllowedUpdates = Array.Empty<UpdateType>() // receive all update types
     };
+    readonly CancellationTokenSource cts = new();
     private readonly CancellationToken cancellationToken;
 
-    internal async Task init()
+    internal async Task Init()
     {
         // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
         botClient.StartReceiving(
@@ -39,9 +39,10 @@ internal class Telegram
             cancellationToken: cts.Token
         );
 
-        var me = await botClient.GetMeAsync();
 
+        var me = await botClient.GetMeAsync();
         log.Info($"Start listening for @{me.Username}");
+
         await SendMessageAsync(Convert.ToInt64(ADMIN_TOKEN), $"bot initialized\n{DateTime.Now}");
 
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -113,28 +114,52 @@ internal class Telegram
     }
     public async Task SendMessageAsync(Freelancer freelancer, string messageText)
     {
-        Message sentMessage = await botClient.SendTextMessageAsync(
+        _ = await botClient.SendTextMessageAsync(
             chatId: freelancer.ChatId,
             text: messageText,
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
+        //log.Debug("message sended");
     }
     public async Task SendMessageAsync(long chatId, string messageText)
     {
-        Message sentMessage = await botClient.SendTextMessageAsync(
+        _ = await botClient.SendTextMessageAsync(
             chatId: chatId,
             text: messageText,
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
     }
+    //TODO remove double "skills"
     public async Task SendPostAsync(Freelancer freel, Post post)
     {
         var sb = new StringBuilder();
         sb.Append($"<b>Title: </b>\n{post.Title}\n");
         sb.Append($"\n\n<b>Description: </b>\n{post.Description}\n");
-        sb.Append($"\n<b>Publicated: </b>\n{post.PubDate}");
         sb.Replace("<br />", "\n");
         sb.Replace("\n\n", "\n");
+        sb.Replace("&nbsp;", " ");
+        sb.Replace("&#039;", "\'");
+        sb.Replace("&bull;", "•");
+
+        //fixes publish date
+        var PubDate = Convert.ToDateTime(post.PubDate);
+        int DateStart = sb.ToString().IndexOf("Posted On");
+        int DateLenght = sb.ToString().IndexOf("Category", DateStart) - DateStart;
+        sb.Remove(DateStart, DateLenght);
+        //TODO add time offset
+        //PubDate.AddHours();
+        sb.Insert(DateStart - 3, $"<b>Posted on</b>: {PubDate.ToString("MMMM d, yyyy HH:mm")}\n");
+
+        //fixes Skills formatting
+        int indexSkillStart = sb.ToString().IndexOf("Skills") - 3;
+        var skillsSb = new StringBuilder(sb.ToString().Substring(indexSkillStart));
+        int indexSkillEnd = skillsSb.ToString().IndexOf("Country") - 3;
+        skillsSb.Remove(indexSkillEnd, skillsSb.Length - indexSkillEnd);
+        sb.Remove(indexSkillStart, skillsSb.Length);
+        skillsSb.Replace("     ", " ");
+        skillsSb.Insert(14, " ");
+        sb.Insert(indexSkillStart, skillsSb.ToString());
+
         await SendMessageAsync(freel, sb.ToString());
 
         log.Debug($"post {post.PubDate.Replace("+0000", "")} sended to {freel.Name}");
