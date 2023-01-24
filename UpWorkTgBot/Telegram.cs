@@ -129,8 +129,8 @@ internal class Telegram
             parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
     }
-    //TODO remove double "skills"
-    public async Task SendPostAsync(Freelancer freel, Post post)
+
+    public string CreatePostString(Freelancer freel, Post post)
     {
         var sb = new StringBuilder();
         sb.Append($"<b>Title: </b>\n{post.Title}\n");
@@ -139,6 +139,7 @@ internal class Telegram
         sb.Replace("\n\n", "\n");
         sb.Replace("&nbsp;", " ");
         sb.Replace("&#039;", "\'");
+        sb.Replace("&rsquo;", "’");
         sb.Replace("&bull;", "•");
 
         //fixes publish date
@@ -146,7 +147,7 @@ internal class Telegram
         int DateStart = sb.ToString().IndexOf("Posted On");
         int DateLenght = sb.ToString().IndexOf("Category", DateStart) - DateStart;
         sb.Remove(DateStart, DateLenght);
-        //TODO add time offset
+        //TODO add time offset for each freel
         //PubDate.AddHours();
         sb.Insert(DateStart - 3, $"<b>Posted on</b>: {PubDate.ToString("MMMM d, yyyy HH:mm")}\n");
 
@@ -160,7 +161,11 @@ internal class Telegram
         skillsSb.Insert(14, " ");
         sb.Insert(indexSkillStart, skillsSb.ToString());
 
-        await SendMessageAsync(freel, sb.ToString());
+        return sb.ToString();
+    }
+    public async Task SendPostAsync(Freelancer freel, Post post)
+    {
+        await SendMessageAsync(freel, CreatePostString(freel, post));
 
         log.Debug($"post {post.PubDate.Replace("+0000", "")} sended to {freel.Name}");
     }

@@ -12,9 +12,16 @@ internal class Program
 
     static async Task Main()
     {
+        Console.WriteLine("UpWork Post: version 24.01.2023");
         Console.WriteLine("started. If no messages after, logger haven't initialized");
         log.Info("logger initialized");
+        Console.WriteLine($"is debug enabled: {log.IsDebugEnabled}");
+        Console.WriteLine($"is info enabled: {log.IsInfoEnabled}");
+        Console.WriteLine($"is warn enabled: {log.IsWarnEnabled}");
+        Console.WriteLine($"is error enabled: {log.IsErrorEnabled}");
+        Console.WriteLine($"is fatal enabled: {log.IsFatalEnabled}");
 
+        string dotEnv = File.ReadAllText(".env");
         DotNetEnv.Env.Load(".env");
 
         string PART_FREEL_PATH = DotNetEnv.Env.GetString("FREEL_PATH");
@@ -66,9 +73,10 @@ internal class Program
                         shownPosts.Add(post.Title);
                         postBeenSended = true;
                     }
+                    log.Debug("-------- 1 LINK ITERATION --------");
                 }
                 if (postBeenSended && shownPosts is not null) await DB.SaveShownPosts(shownPosts, freel.ChatId);
-
+                log.Debug("-------- 1 FREELANCER ITERATION --------");
             }
             if (iterations >= 72 && shownPosts.Count > 60) //clears twice per day if iteration takes 10 min
             {
@@ -77,6 +85,8 @@ internal class Program
                 shownPosts.RemoveRange(60, shownPosts.Count - 60);
             }
             iterations++;
+
+
 
             //TODO rewrite for real 10 minute iterations (now it's more than 10 min)
             float MINUTES = float.Parse(DotNetEnv.Env.GetString("TIME_SPAN"));
